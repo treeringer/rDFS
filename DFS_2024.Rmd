@@ -126,7 +126,7 @@ rwl.report(grow.rwl)
 </br>
 
 ## COFECHA
-You can perform a number of crossdating functions in dplR. If you are like me, you might prefer Andy Bunn's Shiny app called [XdateR](https://andybunn.shinyapps.io/xDateR/). I primarily use the app for crossdating but using the code below helps you get under the hood a bit more. Or go old school and rock COFECHA in the command prompt.
+You can perform a number of crossdating functions in dplR. If you are like me, you might prefer Andy Bunn's Shiny app called [XdateR](https://viz.datascience.arizona.edu/xDateR/). I primarily use the app for crossdating but using the code below helps you get under the hood a bit more. Or go old school and rock COFECHA in the command prompt.
 ```{r COFECHA, echo=TRUE, results='hide', fig.keep='all', fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 corr.rwl.seg(rwl = grow.rwl, seg.length = 50, bin.floor = 100, n = NULL, prewhiten = TRUE, pcrit = 0.05, biweight = TRUE, method = c("spearman"), make.plot = TRUE, label.cex = 1, floor.plus1 = FALSE,
              master = NULL)
@@ -162,7 +162,7 @@ tail(markers)
 The standalone **ARSTAN** program allows you to interactively detrend and standardize a tree-ring series and develop site chronologies. You can download **ARSTAN** [here](https://www.geog.cam.ac.uk/research/projects/dendrosoftware/) if you want the full variety of options. But please be cautious. You can do a lot of things to your data that might not be appropriate.<br>
 
 ## dplR and Detrending
-Many **ARSTAN** options are also baked into **dplR** and it is constantly being updated by some dedicated colleagues. It is best to explore your individual tree-ring series when you work at a new site and/or with a new species. To run interactive detrending you can use the ```i.detrend()``` function. This allows you to explore curve fits for each tree ring series. The main idea of detrending is the removal of age-related growth trends and disturbance signals that obscure the climate-related signal. Andy Bunn's [iDetrend Shiny App](https://andybunn.shinyapps.io/iDetrend/) is a great way to use this code to explore detrending.</br>
+Many **ARSTAN** options are also baked into **dplR** and it is constantly being updated by some dedicated colleagues. It is best to explore your individual tree-ring series when you work at a new site and/or with a new species. To run interactive detrending you can use the ```i.detrend()``` function. This allows you to explore curve fits for each tree ring series. The main idea of detrending is the removal of age-related growth trends and disturbance signals that obscure the climate-related signal. Andy Bunn's [iDetrend Shiny App](https://viz.datascience.arizona.edu/iDetrend/) is a great way to use this code to explore detrending.</br>
 
 If you want to run interactive detrending in Rstudio, use this code:
 grow.rwi.int <- i.detrend(rwl = grow.rwl, nyrs = NULL, f = 0.5,pos.slope = FALSE)</br>
