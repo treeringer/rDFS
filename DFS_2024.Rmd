@@ -171,7 +171,7 @@ You will need to select a detrending method for each series. You could use the "
 
 If you want to utilize a singular detrending method for all of your series after you used interactive detrending to determine the best fit for your data, you can use the ```detrend()``` function instead of ```i.detrend()```. In this function, you will choose one of the following detrending options with *method = *: "Spline", "ModNegExp", "Mean", "Ar", "Friedman", "ModHugershoff" or "AgeDepSpline".</br>
 
-Let's detrend the white oak raw ring widths using the Age Dependent Spline that allow for some flexibility when the tree is young and gets more stiff as the tree ages. This is a good first method to try. The results are time series of indexed values with a mean of 1. </br>
+Let's detrend the red spruce raw ring widths using the Age Dependent Spline that allow for some flexibility when the tree is young and gets more stiff as the tree ages. This is a good first method to try. The results are time series of indexed values with a mean of 1. </br>
 
 ```{r Detrending, echo=TRUE, message=FALSE, warning=FALSE}
 grow.rwi <- detrend(rwl = grow.rwl, method = c("AgeDepSpline"), nyrs = NULL, f = 0.5, pos.slope = FALSE)
