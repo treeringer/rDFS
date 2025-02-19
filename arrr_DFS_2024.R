@@ -124,7 +124,7 @@ summary(grow.crn)
 #https://prism.oregonstate.edu/explorer/; This site has monthly climate data for the USA
 library(dplyr)
 library(tidyr)
-clim <- read.table(file = "PRISM_BTK_precip_tmean.csv", skip = 10, header = TRUE, sep = ",") #skips reading the header
+clim <- read.table(file = "MTL_PRISM_ppt_tmean.csv", skip = 10, header = TRUE, sep = ",") #skips reading the header
 head(clim)
 #Transform data with custom function h/t V. Harris
 PRISM.ym <- function(PRISM.data){
