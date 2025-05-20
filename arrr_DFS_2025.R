@@ -51,7 +51,7 @@ utils::choose.dir() #interactively select your directory or use the setwd() func
 
 #read in raw ring widths, change file name to run your own data
 # Example: grow.rwl <- read.tucson(fname = "my_tree_data.rwl") #.rwl is a standard tree-ring width file format
-#grow.rwl <- read.tucson(fname = "va013.rwl")
+#grow.rwl <- read.tucson(fname = "WAR_QUAL2017.rwl")
 grow.rwl <- read.tucson(fname = file.choose())
 rwl.stats(grow.rwl) #summary and stats of raw ring width file
 seg.plot(grow.rwl) #plot of series time spans
@@ -65,7 +65,7 @@ rwl.report(grow.rwl)
 corr.rwl.seg(rwl = grow.rwl, seg.length = 50, bin.floor = 100, n = NULL, prewhiten = TRUE, pcrit = 0.05, 
              biweight = TRUE, method = c("spearman"), make.plot = TRUE, label.cex = 1, floor.plus1 = FALSE,
              master = NULL) #cofecha essentially
-series.rwl.plot(grow.rwl, series = "089472", series.yrs = as.numeric(names(series)), #look at an individual series
+series.rwl.plot(grow.rwl, series = "WAR07B", series.yrs = as.numeric(names(series)), #look at an individual series
                 seg.length = 50, bin.floor = 100, n = NULL,
                 prewhiten = TRUE, biweight = TRUE, floor.plus1 = FALSE)
 interseries.cor(grow.rwl, n = NULL, prewhiten = TRUE, biweight = TRUE, method = "spearman")#calculate interseries correlations for each series
@@ -84,18 +84,18 @@ grow.rwi.int <- i.detrend(rwl = grow.rwl, nyrs = NULL, f = 0.5,pos.slope = FALSE
 spag.plot(rwl = grow.rwi.int, zfac = 1, useRaster = FALSE, res = 300) #again but with the detrended series
 
 #detrend all series at once - after you know which option is best for your data. Just adjust the method.
-grow.rwi <- detrend(rwl = grow.rwl, method = c("Spline"), nyrs = NULL, f = 0.5, pos.slope = FALSE) 
+grow.rwi <- detrend(rwl = grow.rwl, method = c("spline"), nyrs = NULL, f = 0.5, pos.slope = FALSE) 
 rwi.stats(grow.rwi) #stats for entire crn
 #running stats can help you see when your common signal fades as sample size decreases
 stat_out <- rwi.stats.running(grow.rwi, method = c("spearman"), prewhiten = FALSE, window.length = 50, window.overlap = 49) #running stats - time periods can be adjusted, see help
 
 #building crn without AR model, this produces a standardized crn
-grow.crn <- chron(x = grow.rwi, prefix = "BTK", biweight = TRUE, prewhiten = FALSE)
+grow.crn <- chron(x = grow.rwi, prefix = "XXX", biweight = TRUE, prewhiten = FALSE)
 #plot crn
 plot.crn(x = grow.crn, add.spline = TRUE, nyrs = 20)
 
 #building crn with AR model, this produces a residual crn
-grow.crn <- chron(x = grow.rwi, prefix = "BTK", biweight = TRUE, prewhiten = TRUE)
+grow.crn <- chron(x = grow.rwi, prefix = "XXX", biweight = TRUE, prewhiten = TRUE)
 #plot crn
 plot.crn(x = grow.crn[2:3], add.spline = TRUE, nyrs = 20)
 #use sample depth cutoff if you fancy
@@ -113,11 +113,23 @@ grow.crn.stab <- chron.stabilized(grow.rwi, winLength=101, biweight = TRUE, runn
 yrs <- time(grow.rwl)
 plot.crn(x = grow.crn.stab, add.spline = TRUE, nyrs = 20)
 
-#wavelet transform - this allows you to look at frequencies or temporal patterns in your crn. It's good for paleoclimatology.
+
+# Wavelet transform - this allows you to look at frequencies or temporal patterns in your crn. It's good for paleoclimatology.
 years <- time(grow.crn)
 rings <- grow.crn[, 1]
 tubular <- morlet(y1 = rings, x1 = years, p2 = NULL, dj = 0.25, siglvl = 0.95)
+# --- Start of Plotting and Saving Block ---
+# 1. Open the JPEG graphics device
+# You can choose other formats like png(), pdf(), tiff(), etc.
+# width and height are in pixels by default for jpeg/png
+jpeg("waves.jpg", width = 800, height = 600, units = "px", res = 100) # res = dots per inch
+# 2. Generate the plot
+# The output of this will now go to "waves.jpg"
 wavelet.plot(tubular, useRaster = NA)
+# 3. Close the graphics device
+dev.off()
+# --- End of Plotting and Saving Block ---
+message("Wavelet plot saved as 'waves.jpg' in your working directory.")
 
 
 #####################################################################################
@@ -128,9 +140,8 @@ summary(grow.crn)
 
 #bring in PRISM climate data and format, change file name to run your own data
 #https://prism.oregonstate.edu/explorer/; This site has monthly climate data for the USA
-library(dplyr)
-library(tidyr)
-clim <- read.table(file = "MTL_PRISM_ppt_tmean.csv", skip = 10, header = TRUE, sep = ",") #skips reading the header
+#clim <- read.table(file = "MTL_PRISM_ppt_tmean.csv", skip = 10, header = TRUE, sep = ",") #skips reading the header
+clim <- read.table(file = file.choose(), skip = 10, header = TRUE, sep = ",") #skips reading the header
 head(clim)
 
 #---Transform PRISM data using custom function (separates Year and Month)---
@@ -152,7 +163,7 @@ head(clim3)
 grow.crn.res <- grow.crn[,-1] #this will pull out the residual crn
 grow.crn.std <- grow.crn[,-2] #this will pull out the standard crn
 #this is the main function
-resp <- dcc(chrono = grow.crn.res, climate = clim3, selection = 5:10,
+resp <- dcc(chrono = grow.crn.std, climate = clim3, selection = -5:10,
             method = "correlation", dynamic = "static", win_size = 25, win_offset = 1, start_last = FALSE,
             timespan = NULL, var_names = NULL, ci = 0.05, boot = "stationary", sb = FALSE) #this is the main function in treeclim
 resp
@@ -163,7 +174,7 @@ plot(resp) #plot the model coefficients
 #evaluate recon skill with split calibration, requires 2 climate variables/months
 #Example of using .sum() and .mean() in selection:
 #selection = .sum(6:7, "PPT") + .mean(7:8, "TMEAN")  # Sum of PPT for months 6-7 and mean of TMEAN for months 7-8
-calib <- dcc(chrono = grow.crn.res, climate = clim3, selection = .sum(6:7, "PPT") + .mean(7:8, "TMEAN"), #use a selection with recon variable of interest - modifiers like .mean or .sum can be used to average across months
+calib <- dcc(chrono = grow.crn.res, climate = clim3, selection = .sum(7:8, "PPT") + .mean(7:8, "TMEAN"), #use a selection with recon variable of interest - modifiers like .mean or .sum can be used to average across months
              method = "response")
 calib #show model results
 plot(calib)
