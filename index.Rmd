@@ -1,0 +1,426 @@
+---
+title: "rDFS Workbook"
+author: Dendrochronology Field School <br> <i><small>Script by Stockton Maxwell, Director</small></i>
+  <br>
+output:
+  html_document:
+    toc: true
+    df_print: paged
+  pdf_document: default
+  html_notebook:
+    df_print: paged
+    rows.print: 10
+    theme: cosmo
+    highlight: breezedark
+    number_sections: true
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+editor_options:
+  chunk_output_type: inline
+---
+<style type="text/css">
+
+h1.title {
+  font-size: 40px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkGreen;
+  text-align: Left;
+}
+h4.author { /* Header 4 - and the author and data headers use this too  */
+  font-size: 20px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkGreen;
+  text-align: Left;
+}
+</style>
+
+<style>
+  .col2 {
+    columns: 2 200px;         /* number of columns and width in pixels*/
+    -webkit-columns: 2 200px; /* chrome, safari */
+    -moz-columns: 2 200px;    /* firefox */
+  }
+  .col3 {
+    columns: 3 100px;
+    -webkit-columns: 3 100px;
+    -moz-columns: 3 100px;
+  }
+</style>
+
+# Introduction
+
+Coding can be a major hurdle to conducting data analysis in dendrochronology. This workbook is meant to get you up and running quickly. This script will allow you to enter your data and start analyzing. I've set up the code so that you can load in your own data and run many common analyses. But first, let's run through some key packages and functions. If you are new to R, I recommend checking out [Essential R](https://online.stat.psu.edu/stat484/lesson/essential-r-notes-learning-r) by my colleague Eric Nord. If you are new to dendrochronological analysis in R, I recommend checking out [OpenDendro](https://opendendro.org/r/#introduction) by my colleagues Andy Bunn, Kevin Anchunkaitis, Ed Cook, and Tyson Swetnam. If you want step-by-step video help, check out my website [The Treeringist](https://sites.google.com/view/treeringist/dendro-help) for videos on how to use common R packages, CooRecorder, Cdendro, and links to dendro stuff.
+
+## Libraries Used in this Document<br>
+There are a number of useful libraries for manipulating and analyzing tree-ring data in R. In this document we will use the following tree-ring specific and general libraries. You can use ```citation("x")``` to find the proper citation for each package where *x* is the name of the package that you used.</br> 
+<div class="col2">
+<ul>
++ dplR
++ treeclim
++ TRADER
++ DendroSync
++ dendroTools
++ burnr
++ defoliatR
++ graphics
++ ggplot2
++ utils
++ dplyr
++ tidyr
++ tidyverse
+</ul></div>
+
+## Installing and Loading Libraries
+If you do not have one or many of these libraries installed you can add them by using the  ```install.packages("x")``` function where *x* is the name of the package you desire to install. Be sure to put the name in parentheses. Start by loading all of the libraries:</br>
+
+```{r libraries, message=FALSE, paged.print=FALSE}
+library(dplR)
+library(treeclim)
+library(TRADER)
+library(DendroSync)
+library(dendroTools)
+library(burnr)
+library(dfoliatR)
+library(graphics)
+library(utils)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+```
+
+# Crossdating in dplR
+Using the script below, you will be able to read in raw ring width files for crossdating or *COFECHA*-like analysis. To run your own data, change the ```fname```  to match the data in your ```grow.rwl <- read.rwl(fname = ... , format = "auto")``` script. Alternatively you can use the RWL file included in this project.</br>
+
+Note: The format of most raw ring width files is the Tucson format that organizes measurements in a decadal format. You might have measurements formatted in columns. If you do, try using ```grow.rwl <- read.table(fname = ...)```. THe ```head()``` function shows the top 10 lines of the data. I use this just to make sure it has been read in correctly. "va013.rwl" is a red spruce (*Picea rubens*) chronology collected by Ed Cook back in the 1980s near Mountain Lake Biological Station in Virginia.
+```{r Read In}
+grow.rwl <- read.tucson(fname = "va013.rwl")
+head(grow.rwl)
+```
+</br>
+
+You can examine summary statistics of your ring width file using the ```rwl.stats(x)``` function. 
+```{r RWL Stats, echo=TRUE, message=TRUE}
+rwl.stats(grow.rwl)
+```
+</br>
+
+You can plot the series to examine sample depth and observe the raw ring widths.
+```{r Seg Plot, echo=TRUE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE}
+seg.plot(grow.rwl)
+```
+</br>
+
+Notice the periodic growth releases seen in the raw ring width data. This indicates some disturbance is present at the site. This is common in closed canopy ecosystems.
+```{r Spag Plot, echo=TRUE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE}
+spag.plot(grow.rwl)
+```
+</br>
+
+To assess your crossdating, print out a report of the rwl file. The mean series intercorrelation is a key metric to assess the quality of crossdating.
+```{r RWL Report}
+rwl.report(grow.rwl)
+```
+</br>
+
+## COFECHA
+You can perform a number of crossdating functions in dplR. If you are like me, you might prefer Andy Bunn's Shiny app called [XdateR](https://andybunn.shinyapps.io/xDateR/). I primarily use the app for crossdating but using the code below helps you get under the hood a bit more. Or go old school and rock COFECHA in the command prompt.
+```{r COFECHA, echo=TRUE, results='hide', fig.keep='all', fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+corr.rwl.seg(rwl = grow.rwl, seg.length = 50, bin.floor = 100, n = NULL, prewhiten = TRUE, pcrit = 0.05, biweight = TRUE, method = c("spearman"), make.plot = TRUE, label.cex = 1, floor.plus1 = FALSE,
+             master = NULL)
+```          
+</br>
+
+You can examine an individual core with this function. Just replace the ```series``` name.
+```{r Look Up, echo=TRUE, results='hide', fig.keep='all', fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+series.rwl.plot(grow.rwl, series = "089472", series.yrs = as.numeric(names(series)),
+                seg.length = 50, bin.floor = 100, n = NULL,
+                prewhiten = TRUE, biweight = TRUE, floor.plus1 = FALSE)
+```
+</br>
+
+The series intercorrelation is a key statistic that you will need to review to validate your crossdating of each sample. Values are dependent on the species and location of sampling.
+```{r Interseries Correlation, echo=TRUE, message=FALSE, warning=FALSE}             
+interseries.cor(grow.rwl, n = NULL, prewhiten = TRUE, biweight = TRUE, method = "spearman")
+```
+</br>
+
+If you need assistance with visual crossdating, you might try loading in a well-dated chronology and using the ```pointer``` function to find narrow rings.
+```{r Markers}
+markers <- pointer(grow.rwl)#Calculate marker rings from raw ring width series
+tail(markers)
+```
+</br>
+
+# Detrending and Standardization
+## ARSTAN
+
+**ARSTAN** is the brain child of Dr. Ed Cook. It stands for autoregressive standardization. Birthed from his [1985](http://www.st-andrews.ac.uk/~rjsw/PalaeoPDFs/Cook1985-Chapter%202.pdf) dissertation, Ed laid the modern groundwork for detrending and standardizing tree-ring (i.e., time series) data. Buy him an IPA if you run into him.<br>
+
+The standalone **ARSTAN** program allows you to interactively detrend and standardize a tree-ring series and develop site chronologies. You can download **ARSTAN** [here](https://www.geog.cam.ac.uk/research/projects/dendrosoftware/) if you want the full variety of options. But please be cautious. You can do a lot of things to your data that might not be appropriate.<br>
+
+## dplR and Detrending
+Many **ARSTAN** options are also baked into **dplR** and it is constantly being updated by some dedicated colleagues. It is best to explore your individual tree-ring series when you work at a new site and/or with a new species. To run interactive detrending you can use the ```i.detrend()``` function. This allows you to explore curve fits for each tree ring series. The main idea of detrending is the removal of age-related growth trends and disturbance signals that obscure the climate-related signal. Andy Bunn's [iDetrend Shiny App](https://andybunn.shinyapps.io/iDetrend/) is a great way to use this code to explore detrending.</br>
+
+If you want to run interactive detrending in Rstudio, use this code:
+grow.rwi.int <- i.detrend(rwl = grow.rwl, nyrs = NULL, f = 0.5,pos.slope = FALSE)</br>
+
+You will need to select a detrending method for each series. You could use the "grow.rwi.int" data frame in the rest of the code below if you'd like. I typically use only 1 or 2 detrending methods for a given site and species. This is easier to justify and replicate.</br>
+
+If you want to utilize a singular detrending method for all of your series after you used interactive detrending to determine the best fit for your data, you can use the ```detrend()``` function instead of ```i.detrend()```. In this function, you will choose one of the following detrending options with *method = *: "Spline", "ModNegExp", "Mean", "Ar", "Friedman", "ModHugershoff" or "AgeDepSpline".</br>
+
+Let's detrend the white oak raw ring widths using the Age Dependent Spline that allow for some flexibility when the tree is young and gets more stiff as the tree ages. This is a good first method to try. The results are time series of indexed values with a mean of 1. </br>
+
+```{r Detrending, echo=TRUE, message=FALSE, warning=FALSE}
+grow.rwi <- detrend(rwl = grow.rwl, method = c("AgeDepSpline"), nyrs = NULL, f = 0.5, pos.slope = FALSE)
+tail(grow.rwi)
+```
+</br>
+
+To view the spaghetti plot for the detrended series you can once again use the ```spag.plot()``` function similar to above except substituting the raw ring width data for the detrended data. 
+```{r Detrend Spag Plot, echo=TRUE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE}
+spag.plot(rwl = grow.rwi, zfac = 1, useRaster = FALSE, res = 300)
+```
+</br>
+
+Notice some of the artifacts of the age dependent spline towards the end of the time series. You might consider using a spline (e.g., 50 year spline) that is more flexible at the tails.
+```{r Detrending Round 2, echo=TRUE, message=FALSE, warning=FALSE}
+grow.rwi <- detrend(rwl = grow.rwl, method = c("Spline"), nyrs = 50, f = 0.5, pos.slope = FALSE)
+tail(grow.rwi)
+```
+
+</br>
+```{r Detrend Spag Plot Round 2, echo=TRUE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE}
+spag.plot(rwl = grow.rwi, zfac = 1, useRaster = FALSE, res = 300)
+```
+</br>
+
+To examine the statistics for the entire chronology you can use ```rwi.stats()``` or ```rwi.stats.running()``` to use running statistics in order to adjust the time periods. See ```?rwi.stats.running``` for help on this function.
+</br>
+
+```{r RWI Stats, echo=TRUE, message=FALSE, warning=FALSE}
+rwi.stats(grow.rwi)
+```
+</br>
+
+I like to look at 50 year windows with a 49 year overlap to determine when the Expressed Population Signal (EPS) falls below 0.85, indicating that the common signal in the chronology is weakening. This is common as fewer older trees are used to calculate the mean. I called the object "stat_out" so that I can review the data frame later. Otherwise, it is a large print out.
+```{r Running Stats, echo=TRUE, message=FALSE, warning=FALSE}
+stat_out <- rwi.stats.running(grow.rwi, method = c("spearman"), prewhiten = FALSE, window.length = 50, window.overlap = 49) 
+tail(stat_out)
+```
+</br>
+
+## dplR and Generating Chronologies
+
+The ARSTAN program generates a standardized chronology (maintains temporal autocorrelation), residual chronology (autoregressive model applied), or the ARSTAN chronology (retains a portion of the pooled autocorrelation). In *dplR* you can use the ```chron()``` function to build a mean value chronology from detrended ring widths produced from a ```detrend()``` function.</br>
+
+Let's look at the standardized chronology that retains temporal autocorrelation, or the effect of the previous years' growth on the current year. The biweight function is a method to calculate the mean that is common in dendrochronology. It attempts to reduce the effects of outlier values in the calculation of the mean.
+```{r Standard Crn} 
+grow.crn <- chron(x = grow.rwi, prefix = "MTL", biweight = TRUE, prewhiten = FALSE)
+```
+
+And make a figure of the chronology with a smoothing spline highlighting decadal trends.
+```{r Plot Standard Crn}
+plot.crn(x = grow.crn, add.spline = TRUE, nyrs = 20)
+```
+</br>
+
+Now, we can apply an autoregressive model to remove the autocorrelation from the individual indexed series. This is also known as prewhitening. 
+```{r Residual Crn, echo=TRUE, message=FALSE, warning=FALSE} 
+grow.crn <- chron(x = grow.rwi, prefix = "MTL", biweight = TRUE, prewhiten = TRUE)
+```
+
+And make a figure to compare the standardized vs. residual chronologies.
+```{r Plot Residual Crn}
+plot.crn(x = grow.crn, add.spline = TRUE, nyrs = 20)
+```
+</br>
+
+Finally, we have the ARSTAN chronlogy that applies Ed's special sauce in the chronology building process. Essentially, the ARSTAN chronology removes the autocorrelation with an autoregressive model, calculates the pooled autocorrelation across all series, and applies a portion of the common autocorrelation back in the time series. It has the benefit of retaining some autocorrelation that might be related to climate but removing some of that biological signal. 
+```{r ARSTAN Crn, echo=FALSE, message=FALSE, warning=FALSE}
+grow.crn.ars <- chron.ars(grow.rwi, biweight=TRUE, maxLag=10, firstAICmin=TRUE, verbose=TRUE, prewhitenMethod=c("ar.yw","arima.CSS-ML"))
+```
+</br>
+
+And make a figure to compare the standardized, residual chronologies, and ARSTAN chronologies.
+```{r Plot ARSTAN Crn}
+plot.crn(x = grow.crn.ars, add.spline = TRUE, nyrs = 20)
+```
+</br>
+
+# Growth-Climate Analysis in Treeclim
+
+The **Treeclim** package allows for the assessment of growth-climate relationships. The statistical analysis is somewhat more complex than a standard response or correlation function. [Treeclim](https://nsojournals.onlinelibrary.wiley.com/doi/full/10.1111/ecog.01335) was created by Dr. Christian Zang. Be sure to cite the publication if you use the code. If you want to learn more about the analysis, read [Biondi and Waikul 2004](https://www.sciencedirect.com/science/article/pii/S0098300404000342). The package requires a chronology and monthly climate data for your location. If you are in the contiguous U.S., you can download interpolated monthly and daily climate data from the [PRISM Climate Group](https://prism.oregonstate.edu/explorer/). </br>
+
+Review your chronology data with the ```summary()``` function. 
+```{r Crn Summary}
+summary(grow.crn)
+```
+</br>
+
+Here, we will read in PRISM climate data and format for treeclim. To run with your own data, change file name.
+```{r Climate Data}
+clim <- read.table(file = "MTL_PRISM_ppt_tmean.csv", skip = 10, header = TRUE, sep = ",") #skips reading the header
+head(clim)
+#Transform data with custom function; h/t V. Harris
+PRISM.ym <- function(PRISM.data){
+  PRISM.data <- PRISM.data %>% separate(Date, sep="-", into=c("Year", "Month"))
+  PRISM.data$Year <- as.numeric(PRISM.data$Year)
+  PRISM.data$Month <- as.numeric(PRISM.data$Month)
+  return(PRISM.data)
+}
+clim3 <- PRISM.ym(clim)
+colnames(clim3) <- (c("Year", "Month", "PPT", "TMEAN"))
+head(clim3)
+```
+</br>
+
+You will need to decide which version of the chronology you would like to test against climate data. Here, I pull out the residual chronology for analysis.
+```{r Residual Crn treeclim}
+grow.crn.res <- grow.crn[,-2]
+```
+</br>
+
+## Main treeclim function
+You are required to call up your chronology, climate data, identify your month selection (negative indicates the previous year), method (i.e., response or correlation), and window size. I have used some common settings below.</br>
+
+The dynamic argument can take dynamic = "static", "moving", "evolving". Static calculates coefficients on the maximum period of overlap between growth and climate. Moving use a window of user defined length and shifts it incrementally through time to assess the time stability of the growth-climate relationship. Similarly, the evolving dynamic assesses stability but it initiates with a window of user defined length and then growths the window length to assess the influence of incorporating additional climate data on the relationship.</br>
+
+Here is a static analysis examining the correlation between ring width and precipitation and mean temperature from the previous May through the current October. The analysis first calculates the correlation with precipitation. Then, it removes that influence and calculates the correlation with mean temperature. Oh, and there is bootstrapping to calculate confidence intervals. That's too much to explain here.
+```{r DCC static, echo=TRUE, fig.keep='all', fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+resp <- dcc(chrono = grow.crn.res, climate = clim3, selection = -5:10, 
+                method = "correlation", dynamic = "static", win_size = 35, win_offset = 1, start_last = FALSE, timespan = NULL, var_names = NULL, ci = 0.05, boot = "stationary", sb = FALSE) 
+plot(resp) #call the object resp to show coefficients
+```
+</br>
+
+Here is a moving analysis using a 35-year window starting towards the pith but I have adjusted the months to the current May through the current October. You have to be careful to not violate the assumptions of parametric regression. You will use all of your degrees of freedom with an 18-month window with two variables moving through time. The function will tell you when you messed up.
+```{r DCC moving, echo=TRUE, fig.keep='all', fig.height=8, fig.width=10, message=FALSE, warning=FALSE}
+resp <- dcc(chrono = grow.crn.res, climate = clim3, selection = -5:-10, 
+                method = "correlation", dynamic = "moving", win_size = 35, win_offset = 1, start_last = FALSE, timespan = NULL, var_names = NULL, ci = 0.05, boot = "stationary", sb = FALSE) 
+plot(resp) #call the object resp to show coefficients
+```
+</br>
+
+Here is an evolving analysis that starts with a 35-year window anchored in 1895. The window then grows to 36 years, 37 years, etc.
+```{r DCC evolving, echo=TRUE, fig.keep='all', fig.height=8, fig.width=10, message=FALSE, warning=FALSE}
+resp <- dcc(chrono = grow.crn.res, climate = clim3, selection = -5:-10, 
+                method = "correlation", dynamic = "evolving", win_size = 35, win_offset = 1, start_last = FALSE, timespan = NULL, var_names = NULL, ci = 0.05, boot = "stationary", sb = FALSE) 
+plot(resp) #call the object resp to show coefficients
+```
+</br>
+
+## Seasonal Correlations
+The following code for seasonal correlation analysis was developed by Dr. Dave Meko in Matlab. It is commonly used to assess seasons of varying lengths.
+```{r Seascor}
+seas <- seascorr(grow.crn.res, clim3, var_names = NULL, timespan = NULL, complete = 9, season_lengths = c(1, 3, 6), primary = "PPT", secondary = "TMEAN", ci = 0.05)
+plot(seas)
+```
+</br>
+
+## More advanced growth-climate analysis
+You might have need to evaluate the skill of a reconstruction model. Here, I demonstrate how to use a split calibration period to assess model viability. The function requires 2 climate variables.
+```{r}
+calib <- dcc(chrono = grow.crn.res, climate = clim3, selection =  .mean(-6:-9, "TMEAN") + .sum(-6:-7, "PPT"), #use a selection with recon variable of interest - modifiers like .mean or .sum can be used to average across months
+                method = "response")
+calib #show model results
+plot(calib)
+```
+</br>
+
+This does the model evaluation.
+```{r}
+skillz <- skills(object = calib, model = "ols", calibration = "50%", timespan = NULL)
+plot(skillz)
+skillz #show model results
+```
+</br>
+
+# Growth Release Detection in TRADER
+
+Most of the analysis above concentrated on honing the climate signal while reducing the effect of biological trends and ecological noise. But if you are an ecologist, you want to keep that signal related to stand dynamics and disturbance. One method for understanding forest growth dynamics relies on detecting growth releases. There are many methods to detect releases. [TRADER](https://www.sciencedirect.com/science/article/abs/pii/S1125786514000058) was created by Dr. Jan Altman. Use ```?TRADER``` to learn about the techniques included in the package. I will run through the common growth-averaging technique from [Nowacki and Abrams 1997](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1890/0012-9615%281997%29067%5B0225%3ARGACFR%5D2.0.CO%3B2). 
+
+```{r RWL Stats Check}
+rwl.stats(grow.rwl)
+```
+
+The growth-averaging technique requires raw ring width data so you will use your original rwl file. The ```growthAveragingALL``` function looks at windows before and after each year to determine if the percent growth change has exceeded a defined threshold. I have used common settings in the example. The function creates output for each series and summary figures in your working directory.
+```{r Growth Average}
+growthAveragingALL(grow.rwl, releases = NULL, m1 = 15, m2 = 15,buffer = 10, drawing = TRUE, criteria = 0.25, criteria2 = 0.50,prefix = "ga", gfun = mean, length = 5, storedev = jpeg)
+```
+</br>
+
+## Assessing growth synchronony with dendrosync
+
+Tree growth should ideally show some synchronous growth across a site and a region because climate is a primary factor controlling tree growth, enabling dendrochronologists to crossdate. We can quantify the level of synchrony using the ```dendrosync``` package. [Dendrosync](https://www.sciencedirect.com/science/article/abs/pii/S1125786517301212) was created by Josu Alday. "It combines variance-covariance mixed modelling with functions that quantify the degree to which tree-ring chronologies contain a common signal over a fixed time period. It also estimates temporal changes in synchrony using a moving window algorithm." This function calculates the synchronous growth changes (sgc), semi synchronous growth changes (ssgc) and the length of the compared overlap for a given set of tree-ring records. The package creates a covariance matrix comparing all series in the collection. These could be individual trees as in the example or the time series could be chronologies in a region.
+```{r Dendrosync}
+changes <- sgc(grow.rwl,overlap = 50, prob = TRUE)
+mean(changes$sgc_mat, na.rm = TRUE)
+mean(changes$ssgc_mat, na.rm = TRUE)
+```
+</br>
+
+# Basal area increment calculation in dplR
+
+Let's start with a summary of the raw ring width data.
+```{r RWL Stats BAI}
+rwl.stats(grow.rwl) #summary and stats of raw ring width file
+```
+</br>
+Next, let's run the BAI function that goes from pith to bark and plot the results. Finally, you can write the data to a csv file for later use.
+```{r BAI Out}
+basal <- bai.out(grow.rwl, diam = NULL)
+spag.plot(basal, zfac = 1, useRaster = FALSE, res = 300)
+write.csv(basal, "bai.csv")
+```
+</br>
+
+# Fire history graphing in burnr
+
+Fire history analyis relies on a list of events or fire dates. This type of graphing is/was commonly done in the standalone programs FHX and [FHAES](https://www.frames.gov/fhaes/home). FHAES works quite well as a standalone program with a point and click interface. The format of the files is somewhat unique so I highly recommend using ```?burnr``` when using this code. The example here is simply plotting fire scar data from Zion (h/t to Chris Gentry and Peter Brown). 
+```{r Fire history}
+Zion <- read_fhx('Zion.fhx')
+Sites <- read.csv('ZionSiteIDs.csv')
+facetplot <- plot_demograph(Zion, facet_group = Sites$SiteID, facet_id = Sites$series, plot_legend = TRUE)
+print(facetplot)
+rugplot <- plot_demograph(Zion, composite_rug = TRUE, plot_legend = TRUE)
+compositerug <- rugplot + annotate('rect', xmin = 1721, xmax = 1723, ymin = 0, ymax = 21, alpha = 0.4) + annotate('rect', xmin = 1734, xmax = 1736, ymin = 0, ymax = 21, alpha = 0.4) + annotate('rect', xmin = 1748, xmax = 1750, ymin = 0, ymax = 21, alpha = 0.4) + annotate('rect', xmin = 1777, xmax = 1779, ymin = 0, ymax = 21, alpha = 0.4) + annotate('rect', xmin = 1793, xmax = 1795, ymin = 0, ymax = 21, alpha = 0.4) + scale_x_continuous(limits=c(1450, 2005), breaks = seq(1450,2005,25)) + theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.2), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(compositerug)
+```
+
+# Detecting insect outbraks with dfoliatR
+
+The Outbreak program was originally programmed by Dr. Tom Swetnam. The ```defoliatR``` package with generously coded by [Dr. Chris Guiterman](https://www.sciencedirect.com/science/article/pii/S1125786520300898?via%3Dihub). This package will allow you to detect insect outbreak events using host and non-host tree-ring chronologies. I've used an example from the Intro to doliatR </br>
+
+Let's load in some data.
+```{r Insect data}
+data(dmj_h) #host data is Douglas fir with western spruce budworm damage.
+data(dmj_nh) #non-host data is ponderosa pine from a nearby control site
+```
+<br/>
+
+Here is the main function for analysis.
+```{r Outbreak}
+dmj_defol <- defoliate_trees(host_tree = dmj_h, nonhost_chron = dmj_nh, 
+                             duration_years = 8, max_reduction = -1.28, list_output = FALSE)
+plot(dmj_defol)
+defol_stats(dmj_defol)
+dmj_obr <- outbreak(dmj_defol, filter_perc = 25, filter_min_series = 3)
+plot_outbreak(dmj_obr)
+dmj_obr_stats <- outbreak_stats(dmj_obr)
+head(dmj_obr_stats)
+dmj_interv <- diff(dmj_obr_stats$start)
+```
+</br>
+
+Output all outbreak return intervals, mean interval, and median interval respectivtly.
+```{r Outbreak intervals}
+dmj_interv# All return intervals
+mean(dmj_interv)# Mean interval
+median(dmj_interv)# Median interval
+```
+</br>
+
+That's the end of our regularly scheduled programming. More to come as I build examples out for ```dendroTools``` and other tree-ring packages. You can email at rmaxwell2@radford.edu and I will attempt to answer questions.
